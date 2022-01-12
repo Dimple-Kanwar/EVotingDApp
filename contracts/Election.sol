@@ -7,6 +7,8 @@ pragma solidity >=0.7.0 <0.9.0;
  */
 contract Election {
    
+    bytes32[] public CandidateNames;
+
     struct Voter {
         uint weight; // weight is accumulated by delegation
         bool voted;  // if true, that person already voted
@@ -31,16 +33,17 @@ contract Election {
     /** 
      * @dev Create a new election to choose one of 'Donald Trump' and 'Joe Biden'.
      */
-    constructor(bytes32[] memory candidateNames) {
-        require(candidateNames.length < 2, "Only two candidates are acceptable.");
+    constructor() {
+        CandidateNames.push(bytes32("Donald Trump"));
+        CandidateNames.push(bytes32("Joe Biden"));
         chairperson = msg.sender;
         voters[chairperson].weight = 1;
-        for (uint i = 0; i < candidateNames.length; i++) {
+        for (uint i = 0; i < CandidateNames.length; i++) {
             // 'Candidate({...})' creates a temporary
             // Candidate object and 'candidates.push(...)'
             // appends it to the end of 'candidates'.
             candidates.push(Candidate({
-                name: candidateNames[i],
+                name: CandidateNames[i],
                 voteCount: 0,
                 votersList: new address[](0)
             }));
@@ -69,6 +72,7 @@ contract Election {
      * @param candidateIndex index of candidate in the candidates array
      */
     function vote(uint candidateIndex) public {
+        require(candidateIndex < candidates.length, "user can choose either 0 or 1 only");
         Voter storage voter = voters[msg.sender];
         require(voter.weight != 0, "Has no right to vote");
         require(!voter.voted, "Already voted.");
@@ -80,7 +84,19 @@ contract Election {
         // If 'candidate' is out of the range of the array,
         // this will throw automatically and revert all
         // changes.
-        candidates[candidateIndex].voteCount += voter.weight;
+        candidates[candidateIndex].voteCount += voter.weight; // add voteCount of new candidate
+        candidates[candidateIndex].votersList.push(msg.sender); // add voter to new candidate
+    }
+
+    // remove an element from voterList array of the candidates array
+    function remove(uint _cindex, uint _index) internal {
+        require(_cindex < candidates.length, "index out of bound for candidates");
+        require(_index < candidates[_cindex].votersList.length, "index out of bound for voterList");
+
+        for (uint i = _index; i < candidates[_cindex].votersList.length - 1; i++) {
+            candidates[_cindex].votersList[i] = candidates[_cindex].votersList[i + 1];
+        }
+        candidates[_cindex].votersList.pop();
     }
 
     /**
@@ -88,6 +104,7 @@ contract Election {
      * @param candidateIndex index of candidate in the candidates array
      */
     function changeVote(uint candidateIndex) public {
+        require(candidateIndex < candidates.length, "user can choose either 0 or 1 only");
         Voter storage voter = voters[msg.sender];
         require(voter.weight != 0, "Has no right to vote");
         require(voter.voted, "voter has not voted once.");
@@ -97,7 +114,20 @@ contract Election {
         // If 'candidate' is out of the range of the array,
         // this will throw automatically and revert all
         // changes.
-        candidates[candidateIndex].voteCount += voter.weight;
+        for (uint i = 0; i < CandidateNames.length; i++) {
+            if(i == candidateIndex){
+                candidates[i].voteCount += voter.weight;
+                candidates[i].votersList.push(msg.sender);
+            }else{
+                for (uint v = 0; v < candidates[i].votersList.length; v++){
+                    if(candidates[i].votersList[v] == msg.sender){
+                      remove(i, v); // remove voter address from votersList
+                      candidates[i].voteCount -= voter.weight;  // decrease voteCount by voter.weight
+                    } 
+                }
+            }
+        }
+        
     }
 
     /** 
@@ -121,6 +151,7 @@ contract Election {
     */
     function getTotalVoteCountForCandidate(uint candidateIndex) public view returns(uint voteCount)
     {
+        require(candidateIndex < candidates.length, "user can choose either 0 or 1 only");
         return candidates[candidateIndex].voteCount;
     }
 
@@ -129,6 +160,7 @@ contract Election {
     */
     function getVoterListForCandidate(uint candidateIndex) public view returns(address[] memory votersList)
     {
+        require(candidateIndex < candidates.length, "user can choose either 0 or 1 only");
         return candidates[candidateIndex].votersList;
     }
 }

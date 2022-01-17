@@ -163,4 +163,13 @@ contract Election {
         require(candidateIndex < candidates.length, "user can choose either 0 or 1 only");
         return candidates[candidateIndex].votersList;
     }
+
+    /**
+    * @return voteStatus whether the voter has voted or not
+    */
+    function isVoted(address voterAddress) public view returns(bool voteStatus)
+    {
+        return voters[voterAddress].voted;
+    }
+
 }

@@ -15,6 +15,8 @@ import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
 import { GiveRightToVote } from "./GiveRightToVote";
+import { Vote } from "./Vote";
+import { ChangeVote } from "./ChangeVote";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
@@ -46,8 +48,11 @@ export class Dapp extends React.Component {
     this.initialState = {
       // The info of the token (i.e. It's Name and symbol)
       candidateData: undefined,
-  
+      grantedVoters: undefined,
       chairperson: undefined,
+      votedStatus: false,
+      winner: undefined,
+      votedTo: undefined,
       // The user's address and balance
       selectedAddress: undefined,
       balance: undefined,
@@ -84,6 +89,8 @@ export class Dapp extends React.Component {
       );
     }
 
+
+
     // If the voter data or the user's balance hasn't loaded yet, we show
     // a loading component.
     if (!this.state.chairperson) {
@@ -96,12 +103,11 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             <h1> Election Process - Donald Trump V/s Joe Biden </h1>
-            <h2> Election Chairperson:  <b>{this.state.chairperson} </b></h2>
+            <h4> Election Chairperson:  <b>{this.state.chairperson} </b></h4>
             <p>
-              Welcome <b>{this.state.selectedAddress}</b>, you can vote here.
-              
-              .
+              Welcome To Election Process, you can vote here..
             </p>
+            <p>Selected account: {this.state.selectedAddress}</p>
           </div>
         </div>
 
@@ -136,9 +142,9 @@ export class Dapp extends React.Component {
             {/*
               If the user has no tokens, we don't show the Tranfer form
             */}
-            {this.state.balance.eq(0) && (
+            {/* {this.state.balance.eq(0) && (
               <NoTokensMessage selectedAddress={this.state.selectedAddress} />
-            )}
+            )} */}
 
             {/*
               This component displays a form that the user can use to send a 
@@ -146,13 +152,28 @@ export class Dapp extends React.Component {
               The component doesn't have logic, it just calls the transferTokens
               callback.
             */}
-            {this.state.balance.gt(0) && (
+            {(
               <GiveRightToVote
                 giveRightToVote={(voterAccount) =>
                   this._giveRightToVote(voterAccount)
                 }
               />
             )}
+            {(
+              <Vote
+                vote={(candidateIndex) =>
+                  this._vote(candidateIndex)
+                }
+              />
+            )}
+            <label>Granted Voters List:</label>{this.state.grantedVoters} <br />
+            <label>Winning Candidate: </label>{this.state.winner} <br />
+            <label>votedStatus? : {this.state.votedStatus}</label>
+
+            <ChangeVote
+              changeVote={(candidateIndex) => this._changeVote(candidateIndex)
+              }
+            />
           </div>
         </div>
       </div>
@@ -163,6 +184,11 @@ export class Dapp extends React.Component {
     // We poll the user's balance, so we have to stop doing that when Dapp
     // gets unmounted
     // this._stopPollingData();
+  }
+
+  async _updateGrantedVoters(voterAddress) {
+    this.setState({ grantedVoters: grantedVoters.push(voterAddress) });
+    console.log("grantedVoters: ", this.state.grantedVoters);
   }
 
   async _connectWallet() {
@@ -184,7 +210,7 @@ export class Dapp extends React.Component {
 
     // We reinitialize it whenever the user changes their account.
     window.ethereum.on("accountsChanged", ([newAddress]) => {
-      this._stopPollingData();
+      // this._stopPollingData();
       // `accountsChanged` event can be triggered with an undefined newAddress.
       // This happens when the user removes the Dapp from the "Connected
       // list of sites allowed access to your addresses" (Metamask > Settings > Connections)
@@ -219,6 +245,9 @@ export class Dapp extends React.Component {
     this._intializeEthers();
     this._getChairperson();
     this._getCandidateNames();
+    this._winningCandidate();
+    // this._getVoterListForCandidate();
+    this._isVoterVoted();
     // this._startPollingData();
   }
 
@@ -243,7 +272,7 @@ export class Dapp extends React.Component {
   // don't need to poll it. If that's the case, you can just fetch it when you
   // initialize the app, as we do with the token data.
   // _startPollingData() {
-  //   this._pollDataInterval = setInterval(() => this._updateBalance(), 1000);
+  //   this._pollDataInterval = setInterval(() => {this._updateBalance()}, 1000);
 
   //   // We run it once immediately so we don't have to wait for it
   //   this._updateBalance();
@@ -258,9 +287,9 @@ export class Dapp extends React.Component {
   // in the component state.
   async _getcandidateData() {
     const candidate0 = await this._election.CandidateNames(0);
-    console.log("candidate0: ",candidate0);
+    console.log("candidate0: ", candidate0);
     const candidate1 = await this._election.CandidateNames(1);
-    console.log("candidate1: ",candidate1);
+    console.log("candidate1: ", candidate1);
     this.setState({ candidateData: { candidate0, candidate1 } });
   }
 
@@ -291,10 +320,11 @@ export class Dapp extends React.Component {
       // way we can indicate that we are waiting for it to be mined.
       const tx = await this._election.vote(candidateIndex);
       this.setState({ txBeingSent: tx.hash });
-
+      console.log("tx: ", tx);
       // We use .wait() to wait for the transaction to be mined. This method
       // returns the transaction's receipt.
       const receipt = await tx.wait();
+      console.log("receipt: ", receipt);
 
       // The receipt, contains a status flag, which is 0 to indicate an error.
       if (receipt.status === 0) {
@@ -305,7 +335,8 @@ export class Dapp extends React.Component {
 
       // If we got here, the transaction was successful, so you may want to
       // update your state. Here, we update the user's balance.
-      // await this._updateBalance();
+      this.setState({ votedTo: candidateIndex });
+      this.setState({ votedStatus: true });
     } catch (error) {
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
@@ -411,11 +442,12 @@ export class Dapp extends React.Component {
       // way we can indicate that we are waiting for it to be mined.
       const tx = await this._election.giveRightToVote(voterAccount);
       this.setState({ txBeingSent: tx.hash });
-
+      console.log("Voter rights granted to voter address successfully.");
+      console.log("tx: ", tx);
       // We use .wait() to wait for the transaction to be mined. This method
       // returns the transaction's receipt.
       const receipt = await tx.wait();
-
+      console.log("receipt: ", receipt);
       // The receipt, contains a status flag, which is 0 to indicate an error.
       if (receipt.status === 0) {
         // We can't know the exact error that made the transaction fail when it
@@ -425,8 +457,9 @@ export class Dapp extends React.Component {
 
       // If we got here, the transaction was successful, so you may want to
       // update your state. Here, we update the user's balance.
-      // await this._updateBalance();
+      await this._updateGrantedVoters(voterAccount);
     } catch (error) {
+      console.log("error: ", error);
       // We check the error code to see if this error was produced because the
       // user rejected a tx. If that's the case, we do nothing.
       if (error.code === ERROR_CODE_TX_REJECTED_BY_USER) {
@@ -446,9 +479,16 @@ export class Dapp extends React.Component {
 
   // This returns winning candidate of an election.
   async _winningCandidate() {
-    const candidateName = await this._election.winningCandidate();
+    const candidateInBytes = await this._election.winningCandidate();
+    console.log("candidateInBytes: ", candidateInBytes);
+    if (candidateInBytes == "0x446f6e616c64205472756d700000000000000000000000000000000000000000") this.setState({ winner: "Donald Trump" });
+    else if (candidateInBytes == "0x4a6f6520426964656e0000000000000000000000000000000000000000000000") this.setState({ winner: "Joe Biden" });
+  }
 
-    this.setState({ candidateData: { candidateName } });
+  async _isVoterVoted() {
+    const isVoted = this._election.isVoted(this.state.selectedAddress);
+    if (isVoted) this.setState({ votedStatus: "Voted" });
+    if (!isVoted) this.setState({ votedStatus: "Not Voted Yet" });
   }
 
   // Returns total number of votes for a candidate
@@ -468,7 +508,7 @@ export class Dapp extends React.Component {
   // Returns chairperson of an election.
   async _getChairperson() {
     const chairperson = await this._election.chairperson();
-    console.log("chairperson: ",chairperson);
+    console.log("chairperson: ", chairperson);
     this.setState({ chairperson: chairperson });
   }
 
@@ -479,7 +519,7 @@ export class Dapp extends React.Component {
       const candidateName = await this._election.CandidateNames(index);
       candidateNames.push(candidateName)
     }
-    console.log("candidateNames: ",candidateNames);
+    console.log("candidateNames: ", candidateNames);
     this.setState({ candidateNames: { candidateNames } });
   }
 

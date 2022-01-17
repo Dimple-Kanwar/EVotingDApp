@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/phinelipy/work/src/github.com/test/Ethereum/EVotingDApp/contracts/Election.sol": {
-      "lastModificationDate": 1642020430006,
-      "contentHash": "3b472b926594a8b536414e73ee14d290",
+      "lastModificationDate": 1642437609853,
+      "contentHash": "8a218142c91b4ac678d573a9aa75eaa9",
       "sourceName": "contracts/Election.sol",
       "solcConfig": {
         "version": "0.7.3",

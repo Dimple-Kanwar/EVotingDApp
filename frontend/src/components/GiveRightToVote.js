@@ -3,7 +3,7 @@ import React from "react";
 export function GiveRightToVote({ giveRightToVote }) {
   return (
     <div>
-      <h4>Give Right To Vote</h4>
+      <h4>Grant Voter Rights</h4>
       <form
         onSubmit={(event) => {
           // This function just calls the giveRightToVote callback with the
@@ -19,8 +19,8 @@ export function GiveRightToVote({ giveRightToVote }) {
         }}
       >
         <div className="form-group">
-          <label>Accounts Granted Right To Vote</label>
-          <input
+          {/* <label>Accounts Granted Right To Vote</label> */}
+          {/* <input
             className="form-control"
             type="number"
             step="1"
@@ -29,12 +29,12 @@ export function GiveRightToVote({ giveRightToVote }) {
             required
           />
         </div>
-        <div className="form-group">
-          <label>Voter Account Address</label>
+        <div className="form-group"> */}
+          <label>Enter Voter Account Address:</label>
           <input className="form-control" type="text" name="voterAddress" required />
         </div>
         <div className="form-group">
-          <input className="btn btn-primary" type="submit" value="giveRightToVote" />
+          <input className="btn btn-primary" type="submit" value="Grant Voter Rights" />
         </div>
       </form>
     </div>

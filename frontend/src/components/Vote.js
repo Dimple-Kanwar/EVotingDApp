@@ -1,35 +1,32 @@
 import React from "react";
 
-import { NetworkErrorMessage } from "./NetworkErrorMessage";
-
-export function Vote({ vote, networkError, dismiss }) {
+export function Vote({ vote }) {
   return (
-    <div className="container">
-      <div className="row justify-content-md-center">
-        <div className="col-12 text-center">
-          {/* Metamask network should be set to Localhost:8545. */}
-          {networkError && (
-            <NetworkErrorMessage 
-              message={networkError} 
-              dismiss={dismiss} 
-            />
-          )}
+    <div>
+      <form
+        onSubmit={(event) => {
+          // This function just calls the vote callback with the
+          // form's data.
+          event.preventDefault();
+
+          const formData = new FormData(event.target);
+          const candidateIndex = formData.get("candidate");
+          console.log("candidateIndex: ", candidateIndex);
+          if (candidateIndex) {
+            vote(candidateIndex);
+          }
+        }}
+      >
+        <div className="form-group">
+          <p>Select Candidate to vote.</p>
+          <input type="radio" value="0" name="candidate" /> Donald Trump <br />
+          < input type="radio" value="1" name="candidate" /> Joe Biden
         </div>
-        <div className="col-6 p-4 text-center">
-          <form onSubmit={this.onSubmit}>
-          <p>Click on the button to vote.</p>
-          <input type="radio" value="1" name="candidate" /> Donald Trump
-          <input type="radio" value="2" name="candidate" /> Joe Biden
-          <button
-            className="btn btn-warning"
-            type="submit"
-            onClick={vote(candidate)}
-          >
-            Vote
-          </button>
-          </form>
+
+        <div className="form-group">
+          <input className="btn btn-primary" type="submit" value="Vote" />
         </div>
-      </div>
+      </form>
     </div>
   );
 }

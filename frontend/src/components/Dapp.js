@@ -19,7 +19,6 @@ import { Vote } from "./Vote";
 import { ChangeVote } from "./ChangeVote";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
-import { NoTokensMessage } from "./NoTokensMessage";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -28,17 +27,6 @@ const HARDHAT_NETWORK_ID = '31337';
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
-
-// This component is in charge of doing these things:
-//   1. It connects to the user's wallet
-//   2. Initializes ethers and the Token contract
-//   3. Polls the user balance to keep it updated.
-//   4. Transfers tokens by sending transactions
-//   5. Renders the whole application
-//
-// Note that (3) and (4) are specific of this sample application, but they show
-// you how to keep your Dapp and contract's state in sync,  and how to send a
-// transaction.
 export class Dapp extends React.Component {
   constructor(props) {
     super(props);
@@ -140,17 +128,8 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             {/*
-              If the user has no tokens, we don't show the Tranfer form
-            */}
-            {/* {this.state.balance.eq(0) && (
-              <NoTokensMessage selectedAddress={this.state.selectedAddress} />
-            )} */}
-
-            {/*
-              This component displays a form that the user can use to send a 
-              transaction and transfer some tokens.
-              The component doesn't have logic, it just calls the transferTokens
-              callback.
+              This component displays a form that the user can use to voter rights to an address
+              The component just calls the GiveRightToVote  callback.
             */}
             {(
               <GiveRightToVote
@@ -159,6 +138,10 @@ export class Dapp extends React.Component {
                 }
               />
             )}
+            {/*
+              This component displays a form that the user can use to vote.
+              The component just calls the Vote  callback.
+            */}
             {(
               <Vote
                 vote={(candidateIndex) =>
@@ -169,7 +152,10 @@ export class Dapp extends React.Component {
             <label>Granted Voters List:</label>{this.state.grantedVoters} <br />
             <label>Winning Candidate: </label>{this.state.winner} <br />
             <label>votedStatus? : {this.state.votedStatus}</label>
-
+            {/*
+              This component displays a form that the users can change their vote.
+              The component just calls the ChangeVote  callback.
+            */}
             <ChangeVote
               changeVote={(candidateIndex) => this._changeVote(candidateIndex)
               }
@@ -181,9 +167,7 @@ export class Dapp extends React.Component {
   }
 
   componentWillUnmount() {
-    // We poll the user's balance, so we have to stop doing that when Dapp
-    // gets unmounted
-    // this._stopPollingData();
+  
   }
 
   async _updateGrantedVoters(voterAddress) {
@@ -237,18 +221,12 @@ export class Dapp extends React.Component {
       selectedAddress: userAddress,
     });
 
-    // Then, we initialize ethers, fetch the token's data, and start polling
-    // for the user's balance.
 
-    // Fetching the token data and the user's balance are specific to this
-    // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
     this._getChairperson();
     this._getCandidateNames();
     this._winningCandidate();
-    // this._getVoterListForCandidate();
     this._isVoterVoted();
-    // this._startPollingData();
   }
 
   async _intializeEthers() {
@@ -264,25 +242,6 @@ export class Dapp extends React.Component {
     );
   }
 
-  // The next two methods are needed to start and stop polling data. While
-  // the data being polled here is specific to this example, you can use this
-  // pattern to read any data from your contracts.
-  //
-  // Note that if you don't need it to update in near real time, you probably
-  // don't need to poll it. If that's the case, you can just fetch it when you
-  // initialize the app, as we do with the token data.
-  // _startPollingData() {
-  //   this._pollDataInterval = setInterval(() => {this._updateBalance()}, 1000);
-
-  //   // We run it once immediately so we don't have to wait for it
-  //   this._updateBalance();
-  // }
-
-  // _stopPollingData() {
-  //   clearInterval(this._pollDataInterval);
-  //   this._pollDataInterval = undefined;
-  // }
-
   // The next two methods just read from the contract and store the results
   // in the component state.
   async _getcandidateData() {
@@ -297,19 +256,6 @@ export class Dapp extends React.Component {
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
   async _vote(candidateIndex) {
-    // Sending a transaction is a complex operation:
-    //   - The user can reject it
-    //   - It can fail before reaching the ethereum network (i.e. if the user
-    //     doesn't have ETH for paying for the tx's gas)
-    //   - It has to be mined, so it isn't immediately confirmed.
-    //     Note that some testing networks, like Hardhat Network, do mine
-    //     transactions immediately, but your dapp should be prepared for
-    //     other networks.
-    //   - It can fail once mined.
-    //
-    // This method handles all of those things, so keep reading to learn how to
-    // do it.
-
     try {
       // If a transaction fails, we save that error in the component's state.
       // We only save one such error, so before sending a second transaction, we
@@ -415,22 +361,10 @@ export class Dapp extends React.Component {
     }
   }
 
-  // This method sends an ethereum transaction to transfer tokens.
+  // This method sends an ethereum transaction to grant voter rights to an address.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
   async _giveRightToVote(voterAccount) {
-    // Sending a transaction is a complex operation:
-    //   - The user can reject it
-    //   - It can fail before reaching the ethereum network (i.e. if the user
-    //     doesn't have ETH for paying for the tx's gas)
-    //   - It has to be mined, so it isn't immediately confirmed.
-    //     Note that some testing networks, like Hardhat Network, do mine
-    //     transactions immediately, but your dapp should be prepared for
-    //     other networks.
-    //   - It can fail once mined.
-    //
-    // This method handles all of those things, so keep reading to learn how to
-    // do it.
 
     try {
       // If a transaction fails, we save that error in the component's state.
